@@ -7,19 +7,20 @@ import { PriceConverter } from "./PriceConverter.sol";
 contract FundMe {
     using PriceConverter for uint256;
 
-    uint256 public minUsd = 5e18;
+    uint256 public constant MIN_USD = 5e18;
 
     address[] public funders;
 
     mapping (address funder => uint256 amountFunded) public addressToAmountFunded;
     
-    address public owner;
+    address public immutable i_owner;
+
     constructor() {
-        owner = msg.sender;
+        i_owner = msg.sender;
     }
 
     function fund() public payable {
-        require(msg.value.getConversionRate() > minUsd, "Didn't sent enough ETH");
+        require(msg.value.getConversionRate() > MIN_USD, "Didn't sent enough ETH");
         funders.push(msg.sender);
         addressToAmountFunded[msg.sender] += msg.value;
     }
@@ -40,19 +41,18 @@ contract FundMe {
                 bool sendSuccess = payable(msg.sender).send(address(this).balance);
                 require(sendSuccess, "Send Failed!");
         */
-        // "call"
+        // "call" 
         (bool callSuccess, ) = payable (msg.sender).call{value: address(this).balance}("");
         require(callSuccess, "Send Failed!");
     }
 
     modifier onlyOwner() {
-        require(msg.sender == owner, "Must be owner!");
+        require(msg.sender == i_owner, "Must be owner!");
         /* 
            _ below means first run the modifier then the function, 
            above means first run the function the modifier 
         */
         _;
     }
-
     
 }
