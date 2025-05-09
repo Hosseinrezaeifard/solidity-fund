@@ -4,6 +4,8 @@ pragma solidity 0.8.30;
 
 import { PriceConverter } from "./PriceConverter.sol";
 
+error NotOwner();
+
 contract FundMe {
     using PriceConverter for uint256;
 
@@ -44,10 +46,11 @@ contract FundMe {
         // "call" 
         (bool callSuccess, ) = payable (msg.sender).call{value: address(this).balance}("");
         require(callSuccess, "Send Failed!");
+        revert();
     }
 
     modifier onlyOwner() {
-        require(msg.sender == i_owner, "Must be owner!");
+        if (msg.sender != i_owner) { revert NotOwner(); }
         /* 
            _ below means first run the modifier then the function, 
            above means first run the function the modifier 
