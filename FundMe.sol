@@ -12,13 +12,47 @@ contract FundMe {
     address[] public funders;
 
     mapping (address funder => uint256 amountFunded) public addressToAmountFunded;
+    
+    address public owner;
+    constructor() {
+        owner = msg.sender;
+    }
 
     function fund() public payable {
         require(msg.value.getConversionRate() > minUsd, "Didn't sent enough ETH");
         funders.push(msg.sender);
-        addressToAmountFunded[msg.sender] = addressToAmountFunded[msg.sender] + msg.value;
+        addressToAmountFunded[msg.sender] += msg.value;
     }
 
-    function withdraw() public {}
+    function withdraw() public onlyOwner {
+        for (uint256 i = 0; i < funders.length; i++) {
+            address funder = funders[i];
+            addressToAmountFunded[funder] = 0;
+        }
+
+        funders = new address[](0);
+        
+        /* 
+            withdrawing
+            "transfer" => automatically reverts if fails
+                payable(msg.sender).transfer(address(this).balance);
+            "send" => reverts using require keyword if fails
+                bool sendSuccess = payable(msg.sender).send(address(this).balance);
+                require(sendSuccess, "Send Failed!");
+        */
+        // "call"
+        (bool callSuccess, ) = payable (msg.sender).call{value: address(this).balance}("");
+        require(callSuccess, "Send Failed!");
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Must be owner!");
+        /* 
+           _ below means first run the modifier then the function, 
+           above means first run the function the modifier 
+        */
+        _;
+    }
+
     
 }
